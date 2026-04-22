@@ -1,3 +1,5 @@
+import { useState } from "react"
+
 const SPORTS = [
   { value: "soccer",     label: "Soccer" },
   { value: "baseball",   label: "Baseball" },
@@ -15,15 +17,25 @@ const SPORTS = [
 const today = new Date().toISOString().split("T")[0]
 const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0]
 
+function addDays(dateStr, days) {
+  return new Date(new Date(dateStr).getTime() + days * 86400000)
+    .toISOString().split("T")[0]
+}
+
 export default function SearchForm({ onSearch, loading }) {
+  const [start, setStart] = useState(today)
+  const [end, setEnd]     = useState(nextWeek)
+  const maxEnd = addDays(start, 13)
+
+  function handleStartChange(e) {
+    const newStart = e.target.value
+    setStart(newStart)
+    if (end > addDays(newStart, 13)) setEnd(addDays(newStart, 13))
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
-    const form = e.target
-    onSearch({
-      sport: form.sport.value,
-      start: form.start.value,
-      end:   form.end.value,
-    })
+    onSearch({ sport: e.target.sport.value, start, end })
   }
 
   return (
@@ -67,7 +79,9 @@ export default function SearchForm({ onSearch, loading }) {
             <input
               name="start"
               type="date"
-              defaultValue={today}
+              value={start}
+              min={today}
+              onChange={handleStartChange}
               className="w-full px-3.5 py-2 rounded-md border border-slate-700 bg-[#0f2540] text-white text-sm"
             />
           </div>
@@ -75,11 +89,15 @@ export default function SearchForm({ onSearch, loading }) {
           <div className="flex flex-col gap-1.5 flex-1">
             <label className="text-slate-400 text-xs font-semibold uppercase tracking-wide">
               End Date
+              <span className="ml-1.5 normal-case font-normal text-slate-500">(max 14 days)</span>
             </label>
             <input
               name="end"
               type="date"
-              defaultValue={nextWeek}
+              value={end}
+              min={start}
+              max={maxEnd}
+              onChange={e => setEnd(e.target.value)}
               className="w-full px-3.5 py-2 rounded-md border border-slate-700 bg-[#0f2540] text-white text-sm"
             />
           </div>
