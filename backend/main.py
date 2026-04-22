@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 app = FastAPI()
 
@@ -19,6 +19,21 @@ BROWSER_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Referer": "https://www.nycgovparks.org/permits/field-and-court/map",
 }
+
+# Per-(sport, date) cache. Keyed finely so overlapping date ranges benefit.
+# TTL of 4 hours: data is updated daily but we don't need to hammer the API.
+_cache: dict[str, tuple[list, datetime]] = {}
+CACHE_TTL_SECONDS = 4 * 3600
+
+def _cache_get(sport: str, d: date) -> list | None:
+    entry = _cache.get(f"{sport}:{d}")
+    if entry and (datetime.now() - entry[1]).total_seconds() < CACHE_TTL_SECONDS:
+        return entry[0]
+    return None
+
+def _cache_set(sport: str, d: date, fields: list) -> None:
+    _cache[f"{sport}:{d}"] = (fields, datetime.now())
+
 
 # These are the sport keywords that actually appear in field ID strings
 # returned by the NYC Parks API. Confirmed by parsing a live API response.
@@ -60,13 +75,20 @@ async def get_availability(
         current = start
         while current <= end:
             url = f"https://www.nycgovparks.org/api/athletic-fields?datetime={current}+09:00"
+            cached = _cache_get(sport, current)
+            if cached is not None:
+                availability[str(current)] = cached
+                current += timedelta(days=1)
+                continue
             try:
                 resp = await client.get(url)
                 data = resp.json()
                 fields = data.get("l", [])
                 if keyword:
                     fields = [f for f in fields if keyword in f.upper()]
-                availability[str(current)] = sorted(fields)
+                fields = sorted(fields)
+                _cache_set(sport, current, fields)
+                availability[str(current)] = fields
             except Exception:
                 availability[str(current)] = []
 
