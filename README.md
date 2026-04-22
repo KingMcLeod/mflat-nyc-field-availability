@@ -36,6 +36,36 @@ The frontend renders this as a scrollable grid — fields as rows, dates as colu
 
 ---
 
+## Deploying to Vercel
+
+The frontend deploys as static files and the backend as a Python serverless function, both on the same Vercel project.
+
+```bash
+npm i -g vercel
+vercel
+```
+
+Set one environment variable in the Vercel dashboard (Settings → Environment Variables):
+
+| Variable | Value |
+|---|---|
+| `VITE_API_BASE` | *(leave empty)* |
+
+On deploy, the frontend bundle will use relative URLs (`/api/...`) that resolve to the same Vercel domain as the Python function.
+
+---
+
+## If this went to production
+
+- **Persistent cache.** Swap the in-memory dict for Redis. Serverless instances don't share memory, so the current cache only helps within a single warm instance.
+- **Concurrent fetches.** Replace the day-by-day loop with parallel requests so all days are fetched at once. Drops 14-day cold latency from ~15s to ~2s.
+- **Upstream monitoring.** The NYC Parks API is undocumented and unofficial. Add an alert that fires if the response shape changes or error rates spike — this scraper will break silently if the city updates their site.
+- **CORS lockdown.** Replace `allow_origins=["*"]` with the specific Vercel deployment domain.
+- **Auth.** Add a simple token or HTTP Basic layer before sharing with the client team. The tool currently has no access controls.
+- **Polite parallel fetching.** If switching to concurrent requests, add a small delay between them so the NYC Parks server isn't hit with a burst — a basic courtesy for scraping a public site.
+
+---
+
 ## Known Limitations
 
 - **9 AM snapshot only.** The availability API is queried at 9:00 AM per day. Time-slot-level granularity isn't available from the public endpoint.

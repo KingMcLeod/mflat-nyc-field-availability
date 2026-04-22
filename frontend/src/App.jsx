@@ -16,7 +16,7 @@ export default function App() {
 
     try {
       const params = new URLSearchParams({ sport, start, end })
-      const resp = await fetch(`${API_BASE}/availability?${params}`)
+      const resp = await fetch(`${API_BASE}/api/availability?${params}`)
 
       if (!resp.ok) throw new Error("Failed to fetch")
 

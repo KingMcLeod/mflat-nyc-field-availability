@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
 import httpx
 from datetime import date, timedelta, datetime
 
@@ -25,7 +26,7 @@ BROWSER_HEADERS = {
 _cache: dict[str, tuple[list, datetime]] = {}
 CACHE_TTL_SECONDS = 4 * 3600
 
-def _cache_get(sport: str, d: date) -> list | None:
+def _cache_get(sport: str, d: date) -> Optional[list]:
     entry = _cache.get(f"{sport}:{d}")
     if entry and (datetime.now() - entry[1]).total_seconds() < CACHE_TTL_SECONDS:
         return entry[0]
@@ -54,11 +55,11 @@ SPORT_KEYWORDS = {
     "volleyball": "VOLLEYBALL",
 }
 
-@app.get("/sports")
+@app.get("/api/sports")
 def get_sports():
     return [{"value": k, "label": k.title()} for k in SPORT_KEYWORDS.keys()]
 
-@app.get("/availability")
+@app.get("/api/availability")
 async def get_availability(
     sport: str = Query(default="soccer"),
     start: date = Query(...),
