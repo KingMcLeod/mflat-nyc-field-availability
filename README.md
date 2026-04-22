@@ -1,4 +1,4 @@
-# NYC Parks Field Availability
+# NYC Parks Field Availability  🌳
 
 A tool for searching athletic field availability across NYC Parks — by sport and date range — in a single calendar view. Built as a replacement for the city's map-based permit site, which requires clicking field by field, day by day.
 
