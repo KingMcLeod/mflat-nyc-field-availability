@@ -1,4 +1,4 @@
-# NYC Parks Field Availability  🌳
+# Automated Industries - NYC Parks Field Availability  🌳
 
 A tool for searching athletic field availability across NYC Parks — by sport and date range — in a single calendar view. Built as a replacement for the city's map-based permit site, which requires clicking field by field, day by day.
 
@@ -26,7 +26,32 @@ frontend/   React 19 + Vite + Tailwind CSS v4
 backend/    FastAPI + httpx + Python 3
 ```
 
-The backend is a thin proxy. On each `/availability` request it loops day-by-day over the requested range, hits the NYC Parks API (`nycgovparks.org/api/athletic-fields?datetime=DATE+TIME`), filters by sport keyword, and returns a unified response with a field list and a day-by-day availability map.
+```mermaid
+flowchart LR
+    A([Staff Member]) -->|"Sport · Date Range · Time"| B[Search Form]
+    B -->|"GET /api/availability"| C[FastAPI Backend]
+    C --> D{{In-Memory Cache}}
+    D -->|"Hit — returns instantly"| G
+    D -->|"Miss — fetches live"| E[NYC Parks Public API]
+    E -->|"Available fields per day"| C
+    C -->|"Stores for 20 min"| D
+    C --> G[Availability Grid]
+    G -->|"Filter by borough & availability\nPaginate by week"| A
+```
+
+The app is split into clear layers, each with a single responsibility:
+
+| File | Role |
+|---|---|
+| `frontend/src/App.jsx` | State management, fetch logic, and component wiring |
+| `frontend/src/components/SearchForm.jsx` | Search controls — sport, date range, time slot |
+| `frontend/src/components/AvailabilityCalendar.jsx` | Availability grid, borough & availability filters, week pagination |
+| `backend/main.py` | Proxy to NYC Parks API, sport filtering, in-memory cache |
+| `api/index.py` | Vercel serverless entry point — imports and exposes the FastAPI app |
+
+The backend exists as a proxy rather than calling NYC Parks directly from the browser for two reasons: NYC Parks blocks requests that don't include browser-style headers, and keeping rate limiting and caching server-side is safer and more controllable than exposing it to the client.
+
+On each `/api/availability` request the backend loops day-by-day over the requested range, hits `nycgovparks.org/api/athletic-fields?datetime=DATE+TIME`, filters by sport keyword, and returns a unified response with a field list and a day-by-day availability map.
 
 The frontend renders this as a scrollable grid — fields as rows, dates as columns, green/red cells for available/unavailable — with borough and availability filters and week-by-week pagination.
 
@@ -54,6 +79,20 @@ Set one environment variable in the Vercel dashboard (Settings → Environment V
 | `VITE_API_BASE` | *(leave empty)* |
 
 On deploy, the frontend bundle will use relative URLs (`/api/...`) that resolve to the same Vercel domain as the Python function.
+
+---
+
+## AI Usage
+
+This project was built with AI assistance from Claude Code throughout. Key areas:
+
+- **Rapid comprehension.** Used AI to break down the case study quickly, identify the core problem, and map it to a concrete technical approach before writing any code.
+- **Full-stack scaffolding.** AI assisted with implementing the FastAPI backend, React frontend, Vercel deployment config, and the start.sh setup script.
+- **Directed decision-making.** Product and architecture decisions were mine: I drove what to build (time slot selection, borough filter, week-by-week pagination) and asked for thorough breakdowns before approving any implementation.
+- **Developer-to-developer reasoning.** Used AI as a sounding board: asking why before asking for code, questioning tradeoffs, and pushing back when explanations weren't clear enough.
+- **Research and discovery.** Used AI to investigate the NYC Parks API structure, confirm the borough prefix convention, and surface the Socrata Athletic Facilities dataset as a path to a complete field catalog.
+
+Where I chose not to rely on AI: the AI usage section of this README, the walkthrough framing, and any judgment call about what the client actually needs on Monday morning — those stayed mine.
 
 ---
 
