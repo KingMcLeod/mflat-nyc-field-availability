@@ -24,16 +24,16 @@ BROWSER_HEADERS = {
 # Per-(sport, date) cache. Keyed finely so overlapping date ranges benefit.
 # TTL of 4 hours: data is updated daily but we don't need to hammer the API.
 _cache: dict[str, tuple[list, datetime]] = {}
-CACHE_TTL_SECONDS = 4 * 3600
+CACHE_TTL_SECONDS = 20 * 60
 
-def _cache_get(sport: str, d: date) -> Optional[list]:
-    entry = _cache.get(f"{sport}:{d}")
+def _cache_get(sport: str, d: date, time: str) -> Optional[list]:
+    entry = _cache.get(f"{sport}:{d}:{time}")
     if entry and (datetime.now() - entry[1]).total_seconds() < CACHE_TTL_SECONDS:
         return entry[0]
     return None
 
-def _cache_set(sport: str, d: date, fields: list) -> None:
-    _cache[f"{sport}:{d}"] = (fields, datetime.now())
+def _cache_set(sport: str, d: date, time: str, fields: list) -> None:
+    _cache[f"{sport}:{d}:{time}"] = (fields, datetime.now())
 
 
 # These are the sport keywords that actually appear in field ID strings
@@ -64,6 +64,7 @@ async def get_availability(
     sport: str = Query(default="soccer"),
     start: date = Query(...),
     end:   date = Query(...),
+    time:  str  = Query(default="8:00"),
 ):
     # Cap at 14 days to avoid hammering the NYC Parks API
     if (end - start).days > 14:
@@ -75,8 +76,8 @@ async def get_availability(
     async with httpx.AsyncClient(timeout=10.0, headers=BROWSER_HEADERS) as client:
         current = start
         while current <= end:
-            url = f"https://www.nycgovparks.org/api/athletic-fields?datetime={current}+09:00"
-            cached = _cache_get(sport, current)
+            url = f"https://www.nycgovparks.org/api/athletic-fields?datetime={current}+{time}"
+            cached = _cache_get(sport, current, time)
             if cached is not None:
                 availability[str(current)] = cached
                 current += timedelta(days=1)
@@ -88,7 +89,7 @@ async def get_availability(
                 if keyword:
                     fields = [f for f in fields if keyword in f.upper()]
                 fields = sorted(fields)
-                _cache_set(sport, current, fields)
+                _cache_set(sport, current, time, fields)
                 availability[str(current)] = fields
             except Exception:
                 availability[str(current)] = []

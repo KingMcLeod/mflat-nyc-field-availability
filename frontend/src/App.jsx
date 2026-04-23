@@ -9,13 +9,13 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
 
-  async function handleSearch({ sport, start, end }) {
+  async function handleSearch({ sport, start, end, time }) {
     setLoading(true)
     setError(null)
     setData(null)
 
     try {
-      const params = new URLSearchParams({ sport, start, end })
+      const params = new URLSearchParams({ sport, start, end, time })
       const resp = await fetch(`${API_BASE}/api/availability?${params}`)
 
       if (!resp.ok) throw new Error("Failed to fetch")

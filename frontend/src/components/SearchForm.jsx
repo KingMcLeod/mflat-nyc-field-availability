@@ -17,6 +17,23 @@ const SPORTS = [
 const today = new Date().toISOString().split("T")[0]
 const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0]
 
+function generateTimeSlots() {
+  const slots = []
+  for (let mins = 8 * 60; mins <= 23 * 60 + 30; mins += 30) {
+    const h24    = Math.floor(mins / 60)
+    const m      = mins % 60
+    const period = h24 < 12 ? "AM" : "PM"
+    const h12    = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24
+    slots.push({
+      value: `${h24}:${m.toString().padStart(2, "0")}`,
+      label: `${h12}:${m.toString().padStart(2, "0")} ${period}`,
+    })
+  }
+  return slots
+}
+
+const TIME_SLOTS = generateTimeSlots()
+
 function addDays(dateStr, days) {
   return new Date(new Date(dateStr).getTime() + days * 86400000)
     .toISOString().split("T")[0]
@@ -25,6 +42,7 @@ function addDays(dateStr, days) {
 export default function SearchForm({ onSearch, loading }) {
   const [start, setStart] = useState(today)
   const [end, setEnd]     = useState(nextWeek)
+  const [time, setTime]   = useState("8:00")
   const maxEnd = addDays(start, 13)
 
   function handleStartChange(e) {
@@ -35,7 +53,7 @@ export default function SearchForm({ onSearch, loading }) {
 
   function handleSubmit(e) {
     e.preventDefault()
-    onSearch({ sport: e.target.sport.value, start, end })
+    onSearch({ sport: e.target.sport.value, start, end, time })
   }
 
   return (
@@ -66,6 +84,22 @@ export default function SearchForm({ onSearch, loading }) {
           >
             {SPORTS.map(s => (
               <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Time */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-slate-400 text-xs font-semibold uppercase tracking-wide">
+            Time
+          </label>
+          <select
+            value={time}
+            onChange={e => setTime(e.target.value)}
+            className="w-full sm:w-auto px-3.5 py-2 rounded-md border border-slate-700 bg-[#0f2540] text-white text-sm cursor-pointer sm:min-w-36"
+          >
+            {TIME_SLOTS.map(slot => (
+              <option key={slot.value} value={slot.value}>{slot.label}</option>
             ))}
           </select>
         </div>
