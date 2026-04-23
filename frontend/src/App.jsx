@@ -23,7 +23,7 @@ export default function App() {
       const json = await resp.json()
       setData(json)
     } catch (err) {
-      setError("Could not fetch availability. Make sure the backend is running.")
+      setError("Something went wrong while fetching availability. Please try again in a moment — if the issue continues, NYC Parks may be temporarily unavailable.")
     } finally {
       setLoading(false)
     }
