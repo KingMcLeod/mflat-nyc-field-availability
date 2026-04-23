@@ -71,7 +71,7 @@ export default function AvailabilityCalendar({ data }) {
       </div>
 
       {/* Table container — horizontal scroll on mobile */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+      <div className="overflow-auto rounded-xl border border-slate-200 shadow-sm max-h-[calc(100vh-220px)]">
         <table className="border-collapse text-sm w-full">
 
           {/* Header */}
