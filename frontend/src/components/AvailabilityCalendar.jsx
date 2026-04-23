@@ -78,7 +78,7 @@ export default function AvailabilityCalendar({ data }) {
           <thead>
             <tr>
               {/* Field column header — sticky left */}
-              <th className="sticky left-0 z-20 bg-[#1e3a5f] text-white text-left px-4 py-3 font-semibold whitespace-nowrap min-w-[160px] border-r border-slate-600">
+              <th className="sticky left-0 top-0 z-30 bg-[#1e3a5f] text-white text-left px-4 py-3 font-semibold whitespace-nowrap min-w-[160px] border-r border-slate-600">
                 Field
               </th>
 
@@ -86,7 +86,7 @@ export default function AvailabilityCalendar({ data }) {
               {dates.map((date) => (
                 <th
                   key={date}
-                  className="bg-[#1e3a5f] text-white text-center px-3 py-3 font-semibold whitespace-nowrap min-w-[100px] border-r border-slate-600 last:border-r-0"
+                  className="sticky top-0 z-20 bg-[#1e3a5f] text-white text-center px-3 py-3 font-semibold whitespace-nowrap min-w-[100px] border-r border-slate-600 last:border-r-0"
                 >
                   {formatDate(date)}
                 </th>
