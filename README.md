@@ -26,11 +26,13 @@ frontend/   React 19 + Vite + Tailwind CSS v4
 backend/    FastAPI + httpx + Python 3
 ```
 
-The backend is a thin proxy. On each `/availability` request it loops day-by-day over the requested range, hits the NYC Parks API (`nycgovparks.org/api/athletic-fields`), filters by sport keyword, and returns a unified response with a field list and a day-by-day availability map.
+The backend is a thin proxy. On each `/availability` request it loops day-by-day over the requested range, hits the NYC Parks API (`nycgovparks.org/api/athletic-fields?datetime=DATE+TIME`), filters by sport keyword, and returns a unified response with a field list and a day-by-day availability map.
 
-The frontend renders this as a scrollable grid — fields as rows, dates as columns, green/red cells for available/unavailable.
+The frontend renders this as a scrollable grid — fields as rows, dates as columns, green/red cells for available/unavailable — with borough and availability filters and week-by-week pagination.
 
-**Caching:** Results are cached in memory per `(sport, date)` pair with a 4-hour TTL. Overlapping date range requests reuse cached days. The cache resets on server restart.
+**Time slots:** The user selects a specific time (8:00 AM – 11:30 PM, 30-minute increments). Availability reflects which fields are not reserved at that exact time on each day.
+
+**Caching:** Results are cached in memory per `(sport, date, time)` tuple with a 20-minute TTL. Overlapping date range requests at the same time reuse cached days. The cache resets on server restart.
 
 **Rate limiting:** Requests are made sequentially (one per day in range), capped at 14 days per query. Browser-style headers are sent to avoid being blocked by the NYC Parks server.
 
@@ -63,12 +65,11 @@ On deploy, the frontend bundle will use relative URLs (`/api/...`) that resolve 
 - **CORS lockdown.** Replace `allow_origins=["*"]` with the specific Vercel deployment domain.
 - **Auth.** Add a simple token or HTTP Basic layer before sharing with the client team. The tool currently has no access controls.
 - **Polite parallel fetching.** If switching to concurrent requests, add a small delay between them so the NYC Parks server isn't hit with a burst — a basic courtesy for scraping a public site.
+- **Complete field catalog.** The NYC Open Data platform publishes an official Athletic Facilities dataset ([qnem-b8re](https://dev.socrata.com/foundry/data.cityofnewyork.us/qnem-b8re)) with all ~6,900 facilities including borough, sport, and geometry. Cross-referencing this with the live availability API would allow fully booked fields to be shown (currently invisible since the availability endpoint only returns fields that are free).
 
 ---
 
 ## Known Limitations
-
-- **9 AM snapshot only.** The availability API is queried at 9:00 AM per day. Time-slot-level granularity isn't available from the public endpoint.
 
 - **Not all sports are filterable.** Rugby, Lacrosse, Netball, Bocce, Kickball, Frisbee, T-Ball, and Track & Field don't appear as keywords in the availability API's field ID strings. They're excluded from the sport filter.
 
